@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mariadb:11.8
+    container_name: moodle-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: moodle
+      MYSQL_USER: moodle
+      MYSQL_PASSWORD: moodlepass
+    volumes:
+      - db_data:/var/lib/mysql
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+
+  web:
+    build:
+      context: ./docker
+    container_name: moodle-web
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+    volumes:
+      - ./src:/var/www/moodle
+      - ./moodledata:/var/www/moodledata
+      - ./docker/php.ini:/usr/local/etc/php/php.ini
+
+    working_dir: /var/www/moodle/public
+
+    environment:
+      MOODLE_DB_HOST: db
+      MOODLE_DB_NAME: moodle
+      MOODLE_DB_USER: moodle
+      MOODLE_DB_PASSWORD: moodlepass
+      XDEBUG_MODE: debug
+      XDEBUG_CONFIG: client_host=host.docker.internal client_port=9003
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  db_data:
